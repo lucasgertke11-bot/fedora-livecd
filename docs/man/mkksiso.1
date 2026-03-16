@@ -1,0 +1,300 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "MKKSISO" "1" "Aug 12, 2024" "41.3" "Lorax"
+.SH NAME
+mkksiso \- Make Kickstart ISO Utility Documentation
+.INDENT 0.0
+.TP
+.B Authors
+Brian C. Lane <\X'tty: link mailto:bcl@redhat.com'\fI\%bcl@redhat.com\fP\X'tty: link'>
+.UNINDENT
+.sp
+\fBmkksiso\fP is a tool for creating kickstart boot isos. In it\(aqs simplest form
+you can add a kickstart to a boot.iso and the kickstart will be executed when
+the iso is booted. If the original iso was created with EFI and Mac support the
+kickstart boot.iso will include this support as well.
+.sp
+\fBmkksiso\fP The host system architecture needs to match that of the iso.
+\fBmkksiso\fP will raise an error if it finds a .discinfo on the iso with a
+mismatched arch.
+.sp
+As of version 38.4 \fBmkksiso\fP needs to be run as root to create a fully
+bootable iso. Booting on a UEFI system with the iso written to a flash drive
+requires updating the config files in the embedded efiboot image in the iso. If
+you do not need this functionality you can still run it as a user by passing
+\fI\-\-skip\-mkefiboot\fP\&.
+.SH MKKSISO CMDLINE ARGUMENTS
+.sp
+Add a kickstart and files to an iso
+
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+usage: mkksiso [\-h] [\-a ADD_PATHS] [\-c CMDLINE] [\-r ARGS] [\-\-debug] [\-\-no\-md5sum] [\-\-ks KICKSTART]
+               [\-u IMAGE] [\-V VOLID] [\-R FROM TO] [\-\-skip\-mkefiboot]
+               [KICKSTART] input_iso output_iso
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Positional Arguments
+.INDENT 0.0
+.TP
+.B KICKSTART
+Optional kickstart to add to the ISO
+.TP
+.B input_iso
+ISO to modify
+.TP
+.B output_iso
+Full pathname of iso to be created
+.UNINDENT
+.SS Named Arguments
+.INDENT 0.0
+.TP
+.B \-a, \-\-add
+File or directory to add to ISO (may be used multiple times)
+.sp
+Default: []
+.TP
+.B \-c, \-\-cmdline
+Arguments to add to kernel cmdline
+.sp
+Default: \(dq\(dq
+.TP
+.B \-r, \-\-rm\-args
+Space separated list of arguments to remove from the kernel cmdline
+.sp
+Default: \(dq\(dq
+.TP
+.B \-\-debug
+print debugging info
+.sp
+Default: 20
+.TP
+.B \-\-no\-md5sum
+Do not run implantisomd5 on the ouput iso
+.sp
+Default: True
+.TP
+.B \-\-ks
+Optional kickstart to add to the ISO
+.TP
+.B \-u, \-\-updates
+Optional updates image to add to the ISO
+.TP
+.B \-V, \-\-volid
+Set the ISO volume id, defaults to input\(aqs
+.TP
+.B \-R, \-\-replace
+Replace string in grub.cfg. Can be used multiple times
+.TP
+.B \-\-skip\-mkefiboot
+Skip running mkefiboot
+.sp
+Default: False
+.UNINDENT
+.SH CREATE A KICKSTART BOOT.ISO OR DVD
+.sp
+Create a kickstart like you normally would, kickstart documentation can be
+\X'tty: link https://pykickstart.readthedocs.io/en/latest/'\fI\%found here\fP\X'tty: link', including the
+\fBurl\fP and \fBrepo\fP commands.  If you are creating a DVD and only need the
+content on the DVD you can use the \fBcdrom\fP command to install without a
+network connection. Then run \fBmkksiso\fP like this:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkksiso \-\-ks /PATH/TO/KICKSTART /PATH/TO/ISO /PATH/TO/NEW\-ISO
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+This will create a new iso with the kickstart in the root directory, and the
+kernel cmdline will have \fBinst.ks=...\fP added to it so that it will be
+executed when the iso is booted (be careful not to boot on a system you don\(aqt
+want to wipe out! There will be no prompting).
+.sp
+By default the volume id of the iso is preserved. You can set a custom volid by
+passing \fB\-V\fP and the string to set. The kernel cmdline will be changes, and
+the iso will have th custom volume id.
+.sp
+eg.:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkksiso \-V \(dqTest Only\(dq \-\-ks /PATH/TO/KICKSTART /PATH/TO/ISO /PATH/TO/NEW\-ISO
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH ADDING PACKAGE REPOS TO A BOOT.ISO
+.sp
+You can add repo directories to the iso using \fB\-\-add /PATH/TO/REPO/\fP, make
+sure it contains the \fBrepodata\fP directory by running \fBcreaterepo_c\fP on it
+first. In the kickstart you can refer to the directories (and files) on the iso
+using \fBfile:///run/install/repo/DIRECTORY/\fP\&. You can then use these repos in
+the kickstart like this:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+repo \-\-name=extra\-repo \-\-baseurl=file:///run/install/repo/extra\-repo/
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+Run \fBmkksiso\fP like so:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkksiso \-\-add /PATH/TO/REPO/ \-\-ks /PATH/TO/KICKSTART /PATH/TO/ISO /PATH/TO/NEW\-ISO
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SH CREATE A LIVEIMG BOOT.ISO
+.sp
+You can use the kickstart \X'tty: link https://pykickstart.readthedocs.io/en/latest/kickstart-docs.html#liveimg'\fI\%liveimg command\fP\X'tty: link',
+to install a pre\-generated disk image or tar to the system the iso is booting
+on.
+.sp
+Create a disk image or tar with \fBosbuild\-composer\fP or \fBlivemedia\-creator\fP,
+make sure the image includes tools expected by \fBanaconda\fP, as well as the
+kernel and bootloader support.  In \fBosbuild\-composer\fP use the \fBtar\fP image
+type and make sure to include the \fBkernel\fP, \fBgrub2\fP, and \fBgrub2\-tools\fP
+packages.  If you plan to install it to a UEFI machine make sure to include
+\fBgrub2\-efi\fP and \fBefibootmgr\fP in the blueprint.
+.sp
+Add the \fBroot.tar.xz\fP file to the iso using \fB\-\-add /PATH/TO/ROOT.TAR.XZ\fP,
+and in the kickstart reference it with the \fBliveimg\fP command like this:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+liveimg \-\-url=file:///run/install/repo/root.tar.xz
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+It is also a good idea to use the \fB\-\-checksum\fP argument to \fBliveimg\fP  to be
+sure the file hasn\(aqt been corrupted:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkksiso \-\-add /PATH/TO/root.tar.xz \-\-ks /PATH/TO/KICKSTART /PATH/TO/ISO /PATH/TO/NEW\-ISO
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+When this iso is booted it will execute the kickstart and install the liveimg
+contents to the system without any prompting.
+.SH MODIFYING KERNEL CMDLINE ARGUMENTS
+.sp
+You can add arguments to the kernel cmdline in the ISO config files by using
+\fB\-\-cmdline\fP, like this:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkksiso \-\-cmdline \(dqconsole=ttyS0,115200n8\(dq /PATH/TO/ISO /PATH/TO/NEW\-ISO
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.SS Removing arguments
+.sp
+mkksiso version 37.3 and later support removing arguments from the cmdline. This can be done
+with or without adding a kickstart to the iso:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkksiso \-\-rm \(dqquiet console\(dq /PATH/TO/ISO /PATH/TO/NEW\-ISO
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+will remove the quiet and console arguments from all the the kernel cmdlines on the ISO.
+.SS Changing existing arguments
+.sp
+With the combination of \fB\-\-rm\fP and \fB\-\-command\fP it is now possible to change
+existing arguments. For example let\(aqs say the ISO has a console=tty3 set on the
+cmdline. You want to change that to ttyS0 so you run this:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.nf
+.ft C
+mkksiso \-\-cmdline \(dqconsole=ttyS0,115200n8\(dq \-\-rm \(dqconsole\(dq /PATH/TO/ISO /PATH/TO/NEW\-ISO
+.ft P
+.fi
+.UNINDENT
+.UNINDENT
+.sp
+which will first remove all instances of console in the config files, and
+then add the new console argument.
+.SH HOW IT WORKS
+.sp
+\fBmkksiso\fP only depends on \fBxorriso\fP and \fBisomd5sum\fP\&. It takes advantage of
+\fBxorriso\fP\(aqs ability to extract files, replace files, and add files to the iso
+without need to mount it.
+.sp
+\fBmkksiso\fP extracts all of the config files it knows about, and then modifies
+the boot configuration files to include the \fBinst.ks\fP command. It adds any
+extra command line arguments you specify, and then builds the new iso with the configuration
+files replaced, and new files and directories added.
+.sp
+The last step is to update the iso checksums so that booting with test enabled
+will pass. It uses \fBimplantisomd5\fP from the \fBisomd5sum\fP project.
+.SH AUTHOR
+Weldr Team
+.SH COPYRIGHT
+2024, Red Hat, Inc.
+.\" Generated by docutils manpage writer.
+.
